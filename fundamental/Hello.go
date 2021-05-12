@@ -1,30 +1,34 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type Data struct {
+	Str string `json:"str"`
+	Num int    `json:"num"`
+}
 
 func main() {
+	dataToJson := Data{"Alice", 100}
 
-	myMap := map[int]string{
-		10: "TEN",
-		5:  "FIVE",
-		3:  "THREE",
+	fmt.Println(dataToJson)
+
+	//인코딩
+	jsonBytes, err := json.Marshal(dataToJson)
+	if err != nil {
+		panic(err)
 	}
 
-	fmt.Println(myMap) //map[3:THREE 5:FIVE 10:TEN]
+	fmt.Println(jsonBytes)
 
-	val, isExist := myMap[10]
-
-	fmt.Println(val, isExist) // TEN true
-
-	for key, val := range myMap {
-		fmt.Println(key, " : ", val)
+	//디코딩
+	var jsonToData Data
+	err = json.Unmarshal(jsonBytes, &jsonToData)
+	if err != nil {
+		panic(err)
 	}
 
-	val, isExist = myMap[11]
-
-	fmt.Println(val, isExist) //   false
-	if val == "" {            //val은 ""
-		fmt.Println("val은 \"\"")
-	}
-
+	fmt.Println(jsonToData)
 }

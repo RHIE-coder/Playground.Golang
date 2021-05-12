@@ -42,6 +42,16 @@ GO 환경변수 확인
 
 컴파일 + 실행 파일 만듬
 
+### * Workspace 구조
+
+#### GOROOT
+
+ - bin : 실행파일
+ - pkg : 표준 패키지
+ - src : 소스코드
+
+#### GOPATH : 서드파티
+
 <br><br><br><br><br>
 <br><br><br><br><br>
 
@@ -117,7 +127,7 @@ str2 := string(bytes)
 <br><br><br>
 
 ### - 문자열
- - Back Quote(` `) : raw
+ - Back Quote(\`  \`) : raw
  - (" ") : string
 
 <br><br><br><br><br>
@@ -705,7 +715,270 @@ main 패키지는 Go Compiler에 의해 특별하게 인식됨. (Entry Point)
 
 ## - import
 
-- 표준 라이브러리 위치 : `GOROOT/pkg`
-- 사용자 패키지 위치 : `GOPATH/pkg`
+- 표준 라이브러리 위치 : `GOROOT/pkg` (설치시 자동으로 환경변수 설정됨)
+- 사용자 패키지 위치 : `GOPATH/pkg` (사용자가 따로 환경변수 설정해줘야 함)
 
-[Continue](http://golang.site/go/article/15-Go-%ED%8C%A8%ED%82%A4%EC%A7%80)
+## - Scope
+
+ - Public : 첫글자가 대문자
+ - Private : 첫글자가 소문자(패키지 내에서만 사용 가능)
+
+## - `init()`
+
+패키지 실행시 처음으로 호출되는 init() 함수
+
+```go
+import(
+	alice "mylib/function/good"
+	bob "mylib/function/good"
+	_ "mylib/function/initialize"
+)
+```
+
+alias중에서 `_`은 `init()`만 실행하고 싶을 떄 사용한다.
+
+
+<br><br><br><br><br>
+<br><br><br><br><br>
+
+# 08. 구조체
+
+## - 사용자 자료형
+
+ - case 1
+```go
+package main
+
+import "fmt"
+
+type person struct {
+	name string
+	age  int
+}
+
+func main() {
+	p := person{}
+
+	p.name = "RHIE"
+	p.age = 20
+
+	fmt.Println(p)
+}
+```
+- case 2
+```go
+package main
+
+import "fmt"
+
+type person struct {
+	name string
+	age  int
+}
+
+func main() {
+	var p person
+	p = person{"Alice", 10}
+	fmt.Println(p)
+}
+```
+
+## - 메서드
+
+func와 함수명 사이에 어떤 struct의 메서드인지 표시
+
+```go
+package main
+
+type Rect struct {
+	width, height int
+}
+
+func (r Rect) area() int {
+	return r.height * r.width
+}
+
+func main() {
+	rect := Rect{10, 20}
+	area := rect.area()
+	println(area) //200
+}
+```
+
+### * Value Receiver & Pointer Receiver
+
+```go
+package main
+
+import "fmt"
+
+type Number struct {
+	num int
+}
+
+func (n Number) valueRecv() int {
+	n.num++
+	return n.num
+}
+
+func (n *Number) pointerRecv() int {
+	n.num++
+	return n.num
+}
+
+func newNum() *Number {
+	var n Number
+	n.num = 10
+	return &n
+}
+
+func main() {
+	vr := newNum()
+	pr := newNum()
+
+	vr_result := vr.valueRecv()
+	pr_result := pr.pointerRecv()
+
+	fmt.Println(vr_result, vr.num) //11 10
+	fmt.Println(pr_result, pr.num) //11 11
+}
+```
+
+<br><br><br><br><br>
+<br><br><br><br><br>
+
+# 09. 인터페이스
+
+구현해야하는 메서드 원형들의 집합
+
+```go
+package main
+
+type MyStr string
+
+type MyInt int
+
+func (s MyStr) show() {
+	println("----", s, "----")
+}
+
+func (i MyInt) show() {
+	println("<", i, ">")
+}
+
+type Prnt interface {
+	show()
+}
+
+func main() {
+	var s MyStr = "I love Golang"
+	var i MyInt = 100
+
+	s.show()
+	i.show()
+
+	s = "Really"
+	i = 200
+
+	var p Prnt
+	p = s
+	p.show()
+	p = i
+	p.show()
+
+	s = "OK"
+	i = 300
+
+	printer(s, i)
+}
+
+func printer(p ...Prnt) {
+	for _, v := range p {
+		v.show()
+	}
+}
+```
+
+OUTPUT
+```
+---- I love Golang ----
+< 100 >
+---- Really ----
+< 200 >
+---- OK ----
+< 300 >
+```
+
+## - Object와 같은 Empty Interface와 타입 설정
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+	var obj interface{}
+	obj = "I love Golang"
+	obj = 100
+
+	fmt.Println(obj) //100
+	println(obj)     //(0x9c2aa0,0x9fec58)
+
+	other := obj
+
+	fmt.Println(other) //100
+	println(other)     //(0x9c2aa0,0x9fec58)
+
+	other2 := other.(int) /* 타입 설정 */
+	fmt.Println(other2 + 1) //101
+	println(other2 + 1)     //101
+
+}
+```
+
+<br><br><br><br><br>
+<br><br><br><br><br>
+
+# 10. 에러처리
+
+내장으로 error라는 타입이 있음
+```go
+type error interface{
+	Error() string
+}
+```
+
+내장 패키지인 log는 이 error 인터페이스를 받아서 구현함
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+)
+
+type myErr struct {
+	errMsg string
+}
+
+func (n myErr) Error() string {
+	return n.errMsg
+}
+
+func main() {
+
+	cuserr := myErr{errMsg: "HEY!!! It's error!!!"}
+	log.Fatal(cuserr.Error()) // 2021/05/12 22:25:42 HEY!!! It's error!!!
+	//log.Fatal()은 os.Exit(1)을 호출하여 프로그램을 종료시킨다.
+	fmt.Println("안녕하세요") //출력되지 않는다.
+
+}
+```
+
+`nil`인지 아닌지 판단하여 예외처리를 하자
+
+## - 사용자 에러 만들기와 예외처리
+
+
+[Continue](http://golang.site/go/article/19-Go-%EC%97%90%EB%9F%AC%EC%B2%98%EB%A6%AC)
